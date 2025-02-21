@@ -1,18 +1,22 @@
-import { useState } from "react";
-import { Button } from "./components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
-import { Input } from "./components/ui/input";
-import { Label } from "./components/ui/label";
-import { LockKeyhole, LockKeyholeOpen } from "lucide-react";
-import LZString from "lz-string";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import Encrypt from "./components/Encrypt";
 import Decrypt from "./components/Decrypt";
 
 export default function App() {
   return (
-    <div className="flex flex-col md:flex-row min-h-svh w-full items-center justify-center p-6 md:p-10 gap-6 md:gap-10">
-      <Encrypt />
-      <Decrypt />
+    <div className="flex flex-col min-h-svh w-full items-center justify-center p-4 md:p-8 gap-4 md:gap-4">
+      <Tabs defaultValue="encrypt" className="w-full max-w-md">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="encrypt">Criptografar</TabsTrigger>
+          <TabsTrigger value="decrypt">Descriptografar</TabsTrigger>
+        </TabsList>
+        <TabsContent value="encrypt">
+          <Encrypt />
+        </TabsContent>
+        <TabsContent value="decrypt">
+          <Decrypt />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -1,3 +1,11 @@
+import { useState } from "react";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { LockKeyholeOpen } from "lucide-react";
+import LZString from "lz-string";
+
 export default function Decrypt() {
   const [text, setText] = useState("");
 
@@ -8,12 +16,12 @@ export default function Decrypt() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    alert(LZString.decompressToEncodedURIComponent(text));
+    alert(LZString.decompressFromEncodedURIComponent(text));
 
     setText("");
   }
   return (
-    <div className="w-full max-w-sm">
+    <div className="w-full max-w-md">
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader>
@@ -23,7 +31,7 @@ export default function Decrypt() {
             <form onSubmit={handleSubmit}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="text">Texto</Label>
+                  <Label htmlFor="text">Texto Criptografado</Label>
                   <Input
                     id="text"
                     type="text"
@@ -32,11 +40,14 @@ export default function Decrypt() {
                     onChange={handleText}
                     value={text}
                   ></Input>
-                </div>
+                </div> 
                 <Button>
                   <LockKeyholeOpen />
                   Descriptografar
                 </Button>
+                <div className="rounded-md border px-4 py-2 text-sm">
+                   Seu texto descriptografado aparecerá aqui...
+                </div>
               </div>
             </form>
           </CardContent>
