@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ChangeEvent, FormEvent, MouseEvent, useState } from "react";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -9,22 +9,40 @@ import {
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { LockKeyhole, KeyRound } from "lucide-react";
+
 import LZString from "lz-string";
+import CryptoJS from "crypto-js";
 
 export default function Encrypt() {
-  const [text, setText] = useState("");
+  const [text, setText] = useState<string>("");
+  const [threeDESKey, setThreeDESKey] = useState<string>("");
 
-  function handleText(event: React.ChangeEvent<HTMLInputElement>) {
+  function handleText(event: ChangeEvent<HTMLInputElement>) {
     setText(event.target.value);
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleThreeDESKey(event: ChangeEvent<HTMLInputElement>) {
+    setThreeDESKey(event.target.value);
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    alert(LZString.compressToEncodedURIComponent(text));
+    const compressedText = LZString.compressToEncodedURIComponent(text);
 
     setText("");
+    setThreeDESKey("");
   }
+
+  function handleGenerateThreeDESKey(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+
+    const threeDESKey = CryptoJS.lib.WordArray.random(24).toString(
+      CryptoJS.enc.Hex
+    );
+    setThreeDESKey(threeDESKey);
+  }
+
   return (
     <div className="w-full max-w-md">
       <div className="flex flex-col gap-6">
@@ -47,24 +65,26 @@ export default function Encrypt() {
                   ></Input>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="text">Chave secreta 3DES</Label>
+                  <Label htmlFor="text">
+                    Chave secreta 3DES (192 bits, devido aos bits de paridade)
+                  </Label>
                   <div className="flex w-full max-w-md items-center space-x-2">
                     <Input
-                      id="text"
+                      id="threeDESKey"
                       type="text"
                       placeholder="Escreva ou gere sua chave secreta 3DES..."
                       required
-                      onChange={handleText}
-                      value={text}
+                      onChange={handleThreeDESKey}
+                      value={threeDESKey}
                     ></Input>
-                    <Button type="submit">
+                    <Button onClick={handleGenerateThreeDESKey}>
                       <KeyRound />
                       Gerar
                     </Button>
                   </div>
                 </div>
 
-                <Button>
+                <Button type="submit">
                   <LockKeyhole />
                   Criptografar
                 </Button>
