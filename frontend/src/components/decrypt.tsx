@@ -1,27 +1,38 @@
-import { useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { LockKeyholeOpen } from "lucide-react";
 import LZString from "lz-string";
 
 export default function Decrypt() {
-  const [text, setText] = useState("");
+  const [ciphertext, setCiphertext] = useState<string>("");
+  const [threeDESCipherKey, setThreeDESCipherKey] = useState<string>("");
+  const [RSAPrivateKey, setRSAPrivateKey] = useState<string>("");
 
-  function handleText(event: React.ChangeEvent<HTMLInputElement>) {
-    setText(event.target.value);
+  function handleText(event: ChangeEvent<HTMLInputElement>) {
+    setCiphertext(event.target.value);
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleThreeDESCipherKey(event: ChangeEvent<HTMLInputElement>) {
+    setThreeDESCipherKey(event.target.value);
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    alert(LZString.decompressFromEncodedURIComponent(text));
+    alert(LZString.decompressFromEncodedURIComponent(ciphertext));
 
-    setText("");
+    setCiphertext("");
   }
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-xl">
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader>
@@ -35,19 +46,31 @@ export default function Decrypt() {
                   <Input
                     id="text"
                     type="text"
-                    placeholder="Escreva o que deseja criptografar..."
+                    placeholder="Escreva o que deseja descriptografar..."
                     required
                     onChange={handleText}
-                    value={text}
+                    value={ciphertext}
                   ></Input>
-                </div> 
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="text">
+                  Chave 3DES (192 bits, devido aos bits de paridade)
+                </Label>
+                <div className="flex flex-col sm:flex-row gap-6 sm:gap-2 w-full  max-w-xl items-center ">
+                  <Input
+                    id="threeDESKey"
+                    type="text"
+                    placeholder="Escreva ou gere sua chave 3DES..."
+                    required
+                    onChange={handleThreeDESCipherKey}
+                    value={threeDESCipherKey}
+                  ></Input>
+                </div>
                 <Button>
                   <LockKeyholeOpen />
                   Descriptografar
                 </Button>
-                <div className="rounded-md border px-4 py-2 text-sm">
-                   Seu texto descriptografado aparecerá aqui...
-                </div>
               </div>
             </form>
           </CardContent>
