@@ -117,8 +117,8 @@ export default function Encrypt() {
                     Chave Privada RSA (2048 bits)
                   </p>
                   <p className="text-sm opacity-70 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Salve-a em um lugar seguro e não a compartilhe, será útil para descriptografar a
-                    mensagem recebida
+                    Salve-a em um lugar seguro e não a compartilhe, será útil
+                    para descriptografar a mensagem recebida
                   </p>
                   <div className="flex w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
                     Sua chave privada RSA gerada aparecerá aqui...

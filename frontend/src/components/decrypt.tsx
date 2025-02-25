@@ -16,12 +16,16 @@ export default function Decrypt() {
   const [threeDESCipherKey, setThreeDESCipherKey] = useState<string>("");
   const [RSAPrivateKey, setRSAPrivateKey] = useState<string>("");
 
-  function handleText(event: ChangeEvent<HTMLInputElement>) {
+  function handleCiphertext(event: ChangeEvent<HTMLInputElement>) {
     setCiphertext(event.target.value);
   }
 
   function handleThreeDESCipherKey(event: ChangeEvent<HTMLInputElement>) {
     setThreeDESCipherKey(event.target.value);
+  }
+
+  function handleRSAPrivateKey(event: ChangeEvent<HTMLInputElement>) {
+    setRSAPrivateKey(event.target.value);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -44,28 +48,44 @@ export default function Decrypt() {
                 <div className="grid gap-2">
                   <Label htmlFor="text">Texto Criptografado</Label>
                   <Input
-                    id="text"
+                    id="ciphertext"
                     type="text"
                     placeholder="Escreva o que deseja descriptografar..."
                     required
-                    onChange={handleText}
+                    onChange={handleCiphertext}
                     value={ciphertext}
                   ></Input>
                 </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="text">
-                  Chave 3DES (192 bits, devido aos bits de paridade)
-                </Label>
-                <div className="flex flex-col sm:flex-row gap-6 sm:gap-2 w-full  max-w-xl items-center ">
+                <div className="grid gap-2">
+                  <Label htmlFor="text">Chave 3DES Cifrada (RSA)</Label>
                   <Input
-                    id="threeDESKey"
+                    id="threeDESCipherKey"
                     type="text"
-                    placeholder="Escreva ou gere sua chave 3DES..."
+                    placeholder="Escreva sua chave 3DES cifrada..."
                     required
                     onChange={handleThreeDESCipherKey}
                     value={threeDESCipherKey}
                   ></Input>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="text">Chave Privada RSA (2048 bits)</Label>
+                  <div className="flex flex-col sm:flex-row gap-6 sm:gap-2 w-full max-w-xl items-center">
+                    <Input
+                      id="RSAPrivateKey"
+                      type="text"
+                      placeholder="Escreva sua chave privada RSA ou gere suas chaves RSA..."
+                      required
+                      onChange={handleRSAPrivateKey}
+                      value={RSAPrivateKey}
+                    ></Input>
+                    <Button
+                      className="w-full sm:w-auto"
+                      onClick={handleGenerateThreeDESKey}
+                    >
+                      <KeyRound />
+                      Gerar
+                    </Button>
+                  </div>
                 </div>
                 <Button>
                   <LockKeyholeOpen />
