@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, MouseEvent, useState } from "react";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -8,13 +8,14 @@ import {
 } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { LockKeyholeOpen } from "lucide-react";
+import { KeyRound, LockKeyholeOpen } from "lucide-react";
 import LZString from "lz-string";
 
 export default function Decrypt() {
   const [ciphertext, setCiphertext] = useState<string>("");
   const [threeDESCipherKey, setThreeDESCipherKey] = useState<string>("");
   const [RSAPrivateKey, setRSAPrivateKey] = useState<string>("");
+  const [RSAPublicKey, setRSAPublicKey] = useState<string>("");
 
   function handleCiphertext(event: ChangeEvent<HTMLInputElement>) {
     setCiphertext(event.target.value);
@@ -35,6 +36,25 @@ export default function Decrypt() {
 
     setCiphertext("");
   }
+
+  function handleGenerateRSAPrivateKey(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+
+    const RSAPrivateKey = CryptoJS.lib.WordArray.random(24).toString(
+      CryptoJS.enc.HexRSAPrivateKey
+    );
+    setRSAPrivateKey(RSAPrivateKey);
+  }
+  function handleRSAPublicKey(event: ChangeEvent<HTMLInputElement>): void {
+    throw new Error("Function not implemented.");
+  }
+
+  function handleGenerateThreeDESKey(
+    event: MouseEvent<HTMLButtonElement, MouseEvent>
+  ): void {
+    throw new Error("Function not implemented.");
+  }
+
   return (
     <div className="w-full max-w-xl">
       <div className="flex flex-col gap-6">
@@ -80,17 +100,38 @@ export default function Decrypt() {
                     ></Input>
                     <Button
                       className="w-full sm:w-auto"
-                      onClick={handleGenerateThreeDESKey}
+                      onClick={handleGenerateRSAPrivateKey}
                     >
                       <KeyRound />
                       Gerar
                     </Button>
                   </div>
                 </div>
+                {/* <div className="grid gap-2">
+                  <Label htmlFor="text">Chave Pública RSA (2048 bits)</Label>
+                  <Input
+                    id="RSAPublicKey"
+                    type="text"
+                    placeholder="Sua chave privada RSA gerada aparecerá aqui..."
+                    required
+                    onChange={handleRSAPublicKey}
+                    value={RSAPublicKey}
+                  ></Input>
+                </div> */}
+
                 <Button>
                   <LockKeyholeOpen />
                   Descriptografar
                 </Button>
+
+                {/* <div className="grid gap-2">
+                  <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Dados a serem enviados
+                  </p>
+                  <div className="flex w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
+                    ...
+                  </div>
+                </div> */}
               </div>
             </form>
           </CardContent>
