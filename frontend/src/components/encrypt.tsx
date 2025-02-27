@@ -22,6 +22,8 @@ export default function Encrypt() {
   const [RSAPublicKey, setRSAPublicKey] = useState<string>("");
   const [RSAPrivateKey, setRSAPrivateKey] = useState<string>("");
 
+  const [formattedText, setFormattedText] = useState<Array<string>>([""]);
+
   function handleText(event: ChangeEvent<HTMLInputElement>) {
     setText(event.target.value);
   }
@@ -37,12 +39,48 @@ export default function Encrypt() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const compressedText = LZString.compressToEncodedURIComponent(text);
+    setLoading(true);
 
-    setText("");
-    setThreeDESKey("");
-    setRSAPublicKey("");
-    setRSAPrivateKey("");
+    setTimeout(() => {
+      const compressedText = LZString.compressToEncodedURIComponent(text);
+
+      const crypt = new JSEncrypt();
+
+      crypt.setPublicKey(RSAPublicKey);
+      crypt.setPrivateKey(RSAPrivateKey);
+
+      const hash = CryptoJS.SHA256(compressedText).toString(CryptoJS.enc.Hex);
+      const signedHash = crypt.sign(hash, CryptoJS.SHA256, "sha256").toString();
+
+      const encryptedText = CryptoJS.TripleDES.encrypt(
+        compressedText,
+        CryptoJS.enc.Utf8.parse(threeDESKey),
+        {
+          mode: CryptoJS.mode.ECB,
+          padding: CryptoJS.pad.Pkcs7,
+        }
+      ).toString();
+
+      const encryptedThreeDESKey = crypt.encrypt(threeDESKey).toString();
+
+      setFormattedText([
+        "Texto Cifrado:",
+        encryptedText,
+        "",
+        "Chave 3DES Cifrada:",
+        encryptedThreeDESKey,
+        "",
+        "Assinatura Digital:",
+        signedHash,
+      ]);
+
+      setText("");
+      setThreeDESKey("");
+      setRSAPublicKey("");
+      setRSAPrivateKey("");
+
+      setLoading(false);
+    }, 200);
   }
 
   function handleGenerateThreeDESKey(event: MouseEvent<HTMLButtonElement>) {
@@ -194,8 +232,14 @@ export default function Encrypt() {
                   <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Dados a serem enviados
                   </p>
-                  <div className="flex w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors break-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm text-wrap">
-                    ...
+                  <div className="w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors break-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm text-wrap">
+                    {formattedText &&
+                      formattedText.map((line, index) => (
+                        <span key={index}>
+                          {line}
+                          <br />
+                        </span>
+                      ))}
                   </div>
                 </div>
               </div>

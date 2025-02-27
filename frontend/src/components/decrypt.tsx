@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, MouseEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -9,19 +9,28 @@ import {
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { KeyRound, LockKeyholeOpen } from "lucide-react";
+
 import LZString from "lz-string";
+import CryptoJS from "crypto-js";
 import JSEncrypt from "jsencrypt";
 
 export default function Decrypt() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const [ciphertext, setCiphertext] = useState<string>("");
+  const [signedHash, setSignedHash] = useState<string>("");
   const [threeDESCipherKey, setThreeDESCipherKey] = useState<string>("");
   const [RSAPrivateKey, setRSAPrivateKey] = useState<string>("");
   const [RSAPublicKey, setRSAPublicKey] = useState<string>("");
 
+  const [formattedText, setFormattedText] = useState<Array<string>>([""]);
+
   function handleCiphertext(event: ChangeEvent<HTMLInputElement>) {
     setCiphertext(event.target.value);
+  }
+
+  function handleSignedHash(event: ChangeEvent<HTMLInputElement>) {
+    setSignedHash(event.target.value);
   }
 
   function handleThreeDESCipherKey(event: ChangeEvent<HTMLInputElement>) {
@@ -35,13 +44,57 @@ export default function Decrypt() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const decompressedText =
-      LZString.decompressFromEncodedURIComponent(ciphertext);
+    setLoading(true);
 
-    setCiphertext("");
-    setThreeDESCipherKey("");
-    setRSAPublicKey("");
-    setRSAPrivateKey("");
+    setTimeout(() => {
+      let crypt = new JSEncrypt();
+
+      crypt.setPrivateKey(RSAPrivateKey);
+
+      const decryptedThreeDESKey = crypt.decrypt(threeDESCipherKey);
+
+      const decryptedCompressedText = CryptoJS.TripleDES.decrypt(
+        ciphertext,
+        CryptoJS.enc.Utf8.parse(decryptedThreeDESKey.toString()),
+        {
+          mode: CryptoJS.mode.ECB,
+          padding: CryptoJS.pad.Pkcs7,
+        }
+      ).toString(CryptoJS.enc.Utf8);
+
+      const originalText = LZString.decompressFromEncodedURIComponent(
+        decryptedCompressedText
+      );
+
+      const computedHash = CryptoJS.SHA256(decryptedCompressedText).toString(
+        CryptoJS.enc.Hex
+      );
+
+      crypt = new JSEncrypt();
+
+      crypt.setPublicKey(RSAPublicKey);
+
+      const isSignatureValid = crypt.verify(
+        computedHash,
+        signedHash,
+        CryptoJS.SHA256
+      );
+
+      if (!isSignatureValid) {
+        alert("Digital signature verification failed.");
+        setLoading(false);
+        return;
+      }
+
+      setFormattedText([originalText]);
+
+      setCiphertext("");
+      setThreeDESCipherKey("");
+      setRSAPublicKey("");
+      setRSAPrivateKey("");
+
+      setLoading(false);
+    }, 200);
   }
 
   function handleGenerateRSAKeys(event: MouseEvent<HTMLButtonElement>) {
@@ -101,7 +154,7 @@ export default function Decrypt() {
             <form onSubmit={handleSubmit}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="text">Texto Criptografado</Label>
+                  <Label htmlFor="text">Texto Cifrado</Label>
                   <Input
                     id="ciphertext"
                     type="text"
@@ -109,6 +162,17 @@ export default function Decrypt() {
                     required
                     onChange={handleCiphertext}
                     value={ciphertext}
+                  ></Input>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="signedHash">Assinatura Digital</Label>
+                  <Input
+                    id="signedHash"
+                    type="text"
+                    placeholder="Escreva sua assinatura digital..."
+                    required
+                    onChange={handleSignedHash}
+                    value={signedHash}
                   ></Input>
                 </div>
                 <div className="grid gap-2">
@@ -149,8 +213,8 @@ export default function Decrypt() {
                     </p>
                     <p className="text-sm opacity-70 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       Compartilhe esta chave com quem precisar enviar mensagens
-                      seguras para você, será útil para criptografar os dados
-                      antes do envio.
+                      seguras para você, será utilizada para criptografar os
+                      dados antes do envio.
                     </p>
                     <div className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm overflow-x-auto whitespace-nowrap scrollbar-hide">
                       {RSAPublicKey}
@@ -158,14 +222,14 @@ export default function Decrypt() {
                   </div>
                 )}
 
-                <Button>
+                <Button type="submit">
                   <LockKeyholeOpen />
                   Descriptografar
                 </Button>
 
                 <div className="grid gap-2">
                   <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Dados a serem enviados
+                    Texto Claro
                   </p>
                   <div className="flex w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
                     ...
