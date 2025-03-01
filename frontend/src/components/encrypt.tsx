@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, MouseEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -8,7 +8,7 @@ import {
 } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { LockKeyhole, KeyRound } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 
 import LZString from "lz-string";
 import CryptoJS from "crypto-js";
@@ -36,6 +36,10 @@ export default function Encrypt() {
     setRSAPublicKey(event.target.value);
   }
 
+  function handleRSAPrivateKey(event: ChangeEvent<HTMLInputElement>): void {
+    setRSAPrivateKey(event.target.value);
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -50,11 +54,11 @@ export default function Encrypt() {
       crypt.setPrivateKey(RSAPrivateKey);
 
       const hash = CryptoJS.SHA256(compressedText).toString(CryptoJS.enc.Hex);
-      const signedHash = crypt.sign(hash, CryptoJS.SHA256, "sha256").toString();
+      const signedHash = crypt.sign(hash, CryptoJS.SHA256, "sha256");
 
       const encryptedText = CryptoJS.TripleDES.encrypt(
         compressedText,
-        CryptoJS.enc.Utf8.parse(threeDESKey),
+        CryptoJS.enc.Hex.parse(threeDESKey),
         {
           mode: CryptoJS.mode.ECB,
           padding: CryptoJS.pad.Pkcs7,
@@ -78,40 +82,6 @@ export default function Encrypt() {
       setThreeDESKey("");
       setRSAPublicKey("");
       setRSAPrivateKey("");
-
-      setLoading(false);
-    }, 200);
-  }
-
-  function handleGenerateThreeDESKey(event: MouseEvent<HTMLButtonElement>) {
-    event.preventDefault();
-
-    setLoading(true);
-
-    setTimeout(() => {
-      const threeDESKey = CryptoJS.lib.WordArray.random(24).toString(
-        CryptoJS.enc.Hex
-      );
-
-      setThreeDESKey(threeDESKey);
-
-      setLoading(false);
-    }, 200);
-  }
-
-  function handleGenerateRSAKeys(event: MouseEvent<HTMLButtonElement>) {
-    event.preventDefault();
-
-    setLoading(true);
-
-    setTimeout(() => {
-      const crypt = new JSEncrypt({ default_key_size: "2048" });
-
-      const RSAPublicKey = crypt.getPublicKey();
-      const RSAPrivateKey = crypt.getPrivateKey();
-
-      setRSAPublicKey(RSAPublicKey);
-      setRSAPrivateKey(RSAPrivateKey);
 
       setLoading(false);
     }, 200);
@@ -170,58 +140,37 @@ export default function Encrypt() {
                   <Label htmlFor="text">
                     Chave 3DES (192 bits, devido aos bits de paridade)
                   </Label>
-                  <div className="flex flex-col sm:flex-row gap-6 sm:gap-2 w-full max-w-xl items-center">
-                    <Input
-                      id="threeDESKey"
-                      type="text"
-                      placeholder="Escreva ou gere sua chave 3DES..."
-                      required
-                      onChange={handleThreeDESKey}
-                      value={threeDESKey}
-                    ></Input>
-                    <Button
-                      className="w-full sm:w-auto"
-                      onClick={handleGenerateThreeDESKey}
-                    >
-                      <KeyRound />
-                      Gerar
-                    </Button>
-                  </div>
+                  <Input
+                    id="threeDESKey"
+                    type="text"
+                    placeholder="Escreva sua chave 3DES..."
+                    required
+                    onChange={handleThreeDESKey}
+                    value={threeDESKey}
+                  ></Input>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="text">Chave Pública RSA (2048 bits)</Label>
-                  <div className="flex flex-col sm:flex-row gap-6 sm:gap-2 w-full max-w-xl items-center">
-                    <Input
-                      id="RSAPublicKey"
-                      type="text"
-                      placeholder="Escreva sua chave pública RSA ou gere suas chaves RSA..."
-                      required
-                      onChange={handleRSAPublicKey}
-                      value={RSAPublicKey}
-                    ></Input>
-                    <Button
-                      className="w-full sm:w-auto"
-                      onClick={handleGenerateRSAKeys}
-                    >
-                      <KeyRound />
-                      Gerar
-                    </Button>
-                  </div>
+                  <Input
+                    id="RSAPublicKey"
+                    type="text"
+                    placeholder="Escreva a chave pública RSA do destinatário..."
+                    required
+                    onChange={handleRSAPublicKey}
+                    value={RSAPublicKey}
+                  ></Input>
                 </div>
-                {RSAPrivateKey && (
-                  <div className="grid gap-2">
-                    <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Chave Privada RSA (2048 bits)
-                    </p>
-                    <p className="text-sm opacity-70 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Salve-a em um lugar seguro e não a compartilhe, será útil
-                      para descriptografar a mensagem recebida
-                    </p>
-                    <div className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm overflow-x-auto whitespace-nowrap scrollbar-hide">
-                      {RSAPrivateKey}
-                    </div>
-                  </div>
-                )}
+                <div className="grid gap-2">
+                  <Label htmlFor="text">Chave Privada RSA (2048 bits)</Label>
+                  <Input
+                    id="RSAPrivateKey"
+                    type="text"
+                    placeholder="Escreva sua chave privada RSA..."
+                    required
+                    onChange={handleRSAPrivateKey}
+                    value={RSAPrivateKey}
+                  ></Input>
+                </div>
 
                 <Button type="submit">
                   <LockKeyhole />

@@ -8,7 +8,7 @@ import {
 } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { KeyRound, LockKeyholeOpen } from "lucide-react";
+import { LockKeyholeOpen } from "lucide-react";
 
 import LZString from "lz-string";
 import CryptoJS from "crypto-js";
@@ -20,8 +20,8 @@ export default function Decrypt() {
   const [ciphertext, setCiphertext] = useState<string>("");
   const [signedHash, setSignedHash] = useState<string>("");
   const [threeDESCipherKey, setThreeDESCipherKey] = useState<string>("");
-  const [RSAPrivateKey, setRSAPrivateKey] = useState<string>("");
   const [RSAPublicKey, setRSAPublicKey] = useState<string>("");
+  const [RSAPrivateKey, setRSAPrivateKey] = useState<string>("");
 
   const [formattedText, setFormattedText] = useState<Array<string>>([""]);
 
@@ -37,7 +37,11 @@ export default function Decrypt() {
     setThreeDESCipherKey(event.target.value);
   }
 
-  function handleRSAPrivateKey(event: ChangeEvent<HTMLInputElement>) {
+  function handleRSAPublicKey(event: ChangeEvent<HTMLInputElement>): void {
+    setRSAPublicKey(event.target.value);
+  }
+
+  function handleRSAPrivateKey(event: ChangeEvent<HTMLInputElement>): void {
     setRSAPrivateKey(event.target.value);
   }
 
@@ -46,73 +50,49 @@ export default function Decrypt() {
 
     setLoading(true);
 
-    setTimeout(() => {
-      let crypt = new JSEncrypt();
+    const crypt = new JSEncrypt();
+    crypt.setPrivateKey(RSAPrivateKey);
+    crypt.setPublicKey(RSAPublicKey);
 
-      crypt.setPrivateKey(RSAPrivateKey);
+    const decryptedThreeDESKey = crypt.decrypt(threeDESCipherKey);
 
-      const decryptedThreeDESKey = crypt.decrypt(threeDESCipherKey);
-
-      const decryptedCompressedText = CryptoJS.TripleDES.decrypt(
-        ciphertext,
-        CryptoJS.enc.Utf8.parse(decryptedThreeDESKey.toString()),
-        {
-          mode: CryptoJS.mode.ECB,
-          padding: CryptoJS.pad.Pkcs7,
-        }
-      ).toString(CryptoJS.enc.Utf8);
-
-      const originalText = LZString.decompressFromEncodedURIComponent(
-        decryptedCompressedText
-      );
-
-      const computedHash = CryptoJS.SHA256(decryptedCompressedText).toString(
-        CryptoJS.enc.Hex
-      );
-
-      crypt = new JSEncrypt();
-
-      crypt.setPublicKey(RSAPublicKey);
-
-      const isSignatureValid = crypt.verify(
-        computedHash,
-        signedHash,
-        CryptoJS.SHA256
-      );
-
-      if (!isSignatureValid) {
-        alert("Digital signature verification failed.");
-        setLoading(false);
-        return;
+    const decryptedCompressedText = CryptoJS.TripleDES.decrypt(
+      ciphertext,
+      CryptoJS.enc.Hex.parse(decryptedThreeDESKey.toString()),
+      {
+        mode: CryptoJS.mode.ECB,
+        padding: CryptoJS.pad.Pkcs7,
       }
+    ).toString();
+    console.log(decryptedCompressedText);
 
-      setFormattedText([originalText]);
+    const originalText = LZString.decompressFromEncodedURIComponent(
+      decryptedCompressedText
+    );
 
-      setCiphertext("");
-      setThreeDESCipherKey("");
-      setRSAPublicKey("");
-      setRSAPrivateKey("");
+    const computedHash = CryptoJS.SHA256(decryptedCompressedText).toString(
+      CryptoJS.enc.Hex
+    );
 
+    const isSignatureValid = crypt.verify(
+      computedHash,
+      signedHash,
+      CryptoJS.SHA256.toString
+    );
+
+    if (!isSignatureValid) {
+      alert("Digital signature verification failed.");
       setLoading(false);
-    }, 200);
-  }
+      return;
+    }
 
-  function handleGenerateRSAKeys(event: MouseEvent<HTMLButtonElement>) {
-    event.preventDefault();
+    setFormattedText([originalText]);
 
-    setLoading(true);
+    setCiphertext("");
+    setThreeDESCipherKey("");
+    setRSAPublicKey("");
 
-    setTimeout(() => {
-      const crypt = new JSEncrypt({ default_key_size: "2048" });
-
-      const RSAPublicKey = crypt.getPublicKey();
-      const RSAPrivateKey = crypt.getPrivateKey();
-
-      setRSAPublicKey(RSAPublicKey);
-      setRSAPrivateKey(RSAPrivateKey);
-
-      setLoading(false);
-    }, 200);
+    setLoading(false);
   }
 
   return (
@@ -187,40 +167,27 @@ export default function Decrypt() {
                   ></Input>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="text">Chave Privada RSA (2048 bits)</Label>
-                  <div className="flex flex-col sm:flex-row gap-6 sm:gap-2 w-full max-w-xl items-center">
-                    <Input
-                      id="RSAPrivateKey"
-                      type="text"
-                      placeholder="Escreva sua chave privada RSA ou gere suas chaves RSA..."
-                      required
-                      onChange={handleRSAPrivateKey}
-                      value={RSAPrivateKey}
-                    ></Input>
-                    <Button
-                      className="w-full sm:w-auto"
-                      onClick={handleGenerateRSAKeys}
-                    >
-                      <KeyRound />
-                      Gerar
-                    </Button>
-                  </div>
+                  <Label htmlFor="text">Chave Pública RSA (2048 bits)</Label>
+                  <Input
+                    id="RSAPublicKey"
+                    type="text"
+                    placeholder="Escreva a chave pública RSA do remetente..."
+                    required
+                    onChange={handleRSAPublicKey}
+                    value={RSAPublicKey}
+                  ></Input>
                 </div>
-                {RSAPublicKey && (
-                  <div className="grid gap-2">
-                    <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Chave Pública RSA (2048 bits)
-                    </p>
-                    <p className="text-sm opacity-70 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Compartilhe esta chave com quem precisar enviar mensagens
-                      seguras para você, será utilizada para criptografar os
-                      dados antes do envio.
-                    </p>
-                    <div className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm overflow-x-auto whitespace-nowrap scrollbar-hide">
-                      {RSAPublicKey}
-                    </div>
-                  </div>
-                )}
+                <div className="grid gap-2">
+                  <Label htmlFor="text">Chave Privada RSA (2048 bits)</Label>
+                  <Input
+                    id="RSAPrivateKey"
+                    type="text"
+                    placeholder="Escreva sua chave privada RSA..."
+                    required
+                    onChange={handleRSAPrivateKey}
+                    value={RSAPrivateKey}
+                  ></Input>
+                </div>
 
                 <Button type="submit">
                   <LockKeyholeOpen />
@@ -232,7 +199,13 @@ export default function Decrypt() {
                     Texto Claro
                   </p>
                   <div className="flex w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
-                    ...
+                    {formattedText &&
+                      formattedText.map((line, index) => (
+                        <span key={index}>
+                          {line}
+                          <br />
+                        </span>
+                      ))}
                   </div>
                 </div>
               </div>
