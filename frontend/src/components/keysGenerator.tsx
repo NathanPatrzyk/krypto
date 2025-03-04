@@ -125,6 +125,11 @@ export default function KeysGenerator() {
                   <KeyRound />
                   Gerar
                 </Button>
+                <p className="text-xs">
+                  Este site é destinado apenas para fins educacionais. Não nos
+                  responsabilizamos pela segurança ou integridade dos seus
+                  dados.
+                </p>
               </div>
             </form>
           </CardContent>

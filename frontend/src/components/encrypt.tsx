@@ -10,7 +10,12 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { LockKeyhole } from "lucide-react";
 import { Progress } from "./ui/progress";
-import { compress, encryptWithRSA, encryptWithThreeDES } from "../utils/utils";
+import {
+  compress,
+  encryptWithRSA,
+  encryptWithThreeDES,
+  sign,
+} from "../utils/utils";
 import { toast } from "sonner";
 import { error } from "console";
 
@@ -22,7 +27,7 @@ export default function Encrypt() {
   const [RSAPublicKey, setRSAPublicKey] = useState<string>("");
   const [RSAPrivateKey, setRSAPrivateKey] = useState<string>("");
 
-  const [formattedText, setFormattedText] = useState<Array<string>>([""]);
+  const [formattedText, setFormattedText] = useState<Array<string>>();
 
   function handleText(event: ChangeEvent<HTMLInputElement>) {
     setText(event.target.value);
@@ -57,7 +62,21 @@ export default function Encrypt() {
         error: `${error}`,
       });
 
-      setProgress(30);
+      setProgress(25);
+
+      const signedHash = sign(compressedText, RSAPrivateKey);
+
+      if (!signedHash) {
+        throw new Error("Erro ao gerar assinatura digital.");
+      }
+
+      toast.promise(Promise.resolve(signedHash), {
+        loading: "Gerando assinatura digital...",
+        success: "Assinatura digital gerada com sucesso",
+        error: `${error}`,
+      });
+
+      setProgress(50);
 
       const ciphertext = encryptWithThreeDES(compressedText, threeDESKey);
 
@@ -71,7 +90,7 @@ export default function Encrypt() {
         error: `${error}`,
       });
 
-      setProgress(70);
+      setProgress(75);
 
       const threeDESCipherKey = encryptWithRSA(threeDESKey, RSAPublicKey);
 
@@ -85,6 +104,9 @@ export default function Encrypt() {
         "",
         "Chave 3DES Cifrada (RSA): ",
         threeDESCipherKey,
+        "",
+        "Assinatura Digital: ",
+        signedHash,
       ]);
 
       toast.promise(Promise.resolve(threeDESCipherKey), {
@@ -138,14 +160,19 @@ export default function Encrypt() {
                   <Input
                     id="threeDESKey"
                     type="text"
-                    placeholder="Escreva sua chave 3DES..."
+                    placeholder="Escreva a chave 3DES..."
                     required
                     onChange={handleThreeDESKey}
                     value={threeDESKey}
                   ></Input>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="text">Chave Pública RSA (2048 bits)</Label>
+                  <Label htmlFor="text">
+                    Chave Pública RSA do Destinatário (2048 bits)
+                  </Label>
+                  <p className="text-sm opacity-70 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Essa chave será útil para criptografar a chave 3DES
+                  </p>
                   <Input
                     id="RSAPublicKey"
                     type="text"
@@ -157,11 +184,14 @@ export default function Encrypt() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="text">Chave Privada RSA (2048 bits)</Label>
+                  <p className="text-sm opacity-70 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Essa chave será útil para gerar a assinatura digital
+                  </p>
                   <Input
                     id="RSAPrivateKey"
                     type="text"
                     placeholder="Escreva sua chave privada RSA..."
-                    // required
+                    required
                     onChange={handleRSAPrivateKey}
                     value={RSAPrivateKey}
                   ></Input>
@@ -177,15 +207,22 @@ export default function Encrypt() {
                     Dados a serem enviados
                   </p>
                   <div className="w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors break-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm text-wrap">
-                    {formattedText &&
-                      formattedText.map((line, index) => (
-                        <span key={index}>
-                          {line}
-                          <br />
-                        </span>
-                      ))}
+                    {formattedText
+                      ? formattedText.map((line, index) => (
+                          <span key={index}>
+                            {line}
+                            <br />
+                          </span>
+                        ))
+                      : "Os dados a serem enviados aparecerão aqui..."}
                   </div>
                 </div>
+
+                <p className="text-xs">
+                  Este site é destinado apenas para fins educacionais. Não nos
+                  responsabilizamos pela segurança ou integridade dos seus
+                  dados.
+                </p>
               </div>
             </form>
           </CardContent>

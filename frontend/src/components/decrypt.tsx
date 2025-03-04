@@ -14,6 +14,7 @@ import {
   decompress,
   decryptWithRSA,
   decryptWithThreeDES,
+  verify,
 } from "../utils/utils";
 import { toast } from "sonner";
 import { error } from "console";
@@ -27,7 +28,7 @@ export default function Decrypt() {
   const [RSAPublicKey, setRSAPublicKey] = useState<string>("");
   const [RSAPrivateKey, setRSAPrivateKey] = useState<string>("");
 
-  const [formattedText, setFormattedText] = useState<Array<string>>([""]);
+  const [formattedText, setFormattedText] = useState<Array<string>>();
 
   function handleCiphertext(event: ChangeEvent<HTMLInputElement>) {
     setCiphertext(event.target.value);
@@ -65,7 +66,7 @@ export default function Decrypt() {
         error: `${error}`,
       });
 
-      setProgress(30);
+      setProgress(25);
 
       const text = decryptWithThreeDES(ciphertext, threeDESKey);
 
@@ -79,21 +80,25 @@ export default function Decrypt() {
         error: `${error}`,
       });
 
-      setProgress(70);
+      setProgress(50);
+
+      const isValid = verify(text, signedHash, RSAPublicKey);
+
+      if (!isValid) {
+        throw new Error("Assinatura digital inválida!");
+      }
+
+      toast.promise(Promise.resolve(isValid), {
+        loading: "Validando assinatura digital...",
+        success: "Assinatura digital válida!",
+        error: `"Assinatura digital inválida!"`,
+      });
+
+      setProgress(75);
 
       const decompressedText = decompress(text);
 
-      if (!decompressedText) {
-        throw new Error("Erro ao descomprimir texto.");
-      }
-
       setFormattedText([decompressedText]);
-
-      toast.promise(Promise.resolve(decompressedText), {
-        loading: "Descomprimindo texto...",
-        success: "Texto descomprimido com sucesso!",
-        error: `${error}`,
-      });
 
       setProgress(100);
 
@@ -138,10 +143,40 @@ export default function Decrypt() {
                   <Input
                     id="threeDESCipherKey"
                     type="text"
-                    placeholder="Escreva sua chave 3DES cifrada..."
+                    placeholder="Escreva a chave 3DES cifrada..."
                     required
                     onChange={handleThreeDESCipherKey}
                     value={threeDESCipherKey}
+                  ></Input>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="text">
+                    Chave Pública RSA do Remetente (2048 bits)
+                  </Label>
+                  <p className="text-sm opacity-70 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Essa chave será útil para verificar a assinatura digital
+                  </p>
+                  <Input
+                    id="RSAPublicKey"
+                    type="text"
+                    placeholder="Escreva a chave pública RSA do remetente..."
+                    required
+                    onChange={handleRSAPublicKey}
+                    value={RSAPublicKey}
+                  ></Input>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="text">Chave Privada RSA (2048 bits)</Label>
+                  <p className="text-sm opacity-70 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Essa chave será útil para descriptografar a chave 3DES
+                  </p>
+                  <Input
+                    id="RSAPrivateKey"
+                    type="text"
+                    placeholder="Escreva sua chave privada RSA..."
+                    required
+                    onChange={handleRSAPrivateKey}
+                    value={RSAPrivateKey}
                   ></Input>
                 </div>
                 <div className="grid gap-2">
@@ -150,31 +185,9 @@ export default function Decrypt() {
                     id="signedHash"
                     type="text"
                     placeholder="Escreva sua assinatura digital..."
-                    // required
+                    required
                     onChange={handleSignedHash}
                     value={signedHash}
-                  ></Input>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="text">Chave Pública RSA (2048 bits)</Label>
-                  <Input
-                    id="RSAPublicKey"
-                    type="text"
-                    placeholder="Escreva a chave pública RSA do remetente..."
-                    // required
-                    onChange={handleRSAPublicKey}
-                    value={RSAPublicKey}
-                  ></Input>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="text">Chave Privada RSA (2048 bits)</Label>
-                  <Input
-                    id="RSAPrivateKey"
-                    type="text"
-                    placeholder="Escreva sua chave privada RSA..."
-                    required
-                    onChange={handleRSAPrivateKey}
-                    value={RSAPrivateKey}
                   ></Input>
                 </div>
 
@@ -187,16 +200,23 @@ export default function Decrypt() {
                   <p className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     Texto Claro
                   </p>
-                  <div className="flex w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
-                    {formattedText &&
-                      formattedText.map((line, index) => (
-                        <span key={index}>
-                          {line}
-                          <br />
-                        </span>
-                      ))}
+                  <div className="w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm">
+                    {formattedText
+                      ? formattedText.map((line, index) => (
+                          <span key={index}>
+                            {line}
+                            <br />
+                          </span>
+                        ))
+                      : "O texto claro aparecerá aqui..."}
                   </div>
                 </div>
+
+                <p className="text-xs">
+                  Este site é destinado apenas para fins educacionais. Não nos
+                  responsabilizamos pela segurança ou integridade dos seus
+                  dados.
+                </p>
               </div>
             </form>
           </CardContent>
