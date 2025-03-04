@@ -10,7 +10,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { LockKeyhole } from "lucide-react";
 import { Progress } from "./ui/progress";
-import { compress, encryptWithThreeDES } from "../utils/utils";
+import { compress, encryptWithRSA, encryptWithThreeDES } from "../utils/utils";
 import { toast } from "sonner";
 import { error } from "console";
 
@@ -43,6 +43,7 @@ export default function Encrypt() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     setProgress(1);
     event.preventDefault();
+
     try {
       const compressedText = compress(text);
 
@@ -56,17 +57,39 @@ export default function Encrypt() {
         error: `${error}`,
       });
 
+      setProgress(30);
+
       const ciphertext = encryptWithThreeDES(compressedText, threeDESKey);
 
       if (!ciphertext) {
         throw new Error("Erro ao criptografar texto com 3DES.");
       }
 
-      setFormattedText([ciphertext]);
-
       toast.promise(Promise.resolve(ciphertext), {
         loading: "Criptografando texto com 3DES...",
         success: "Texto criptografado com sucesso!",
+        error: `${error}`,
+      });
+
+      setProgress(70);
+
+      const threeDESCipherKey = encryptWithRSA(threeDESKey, RSAPublicKey);
+
+      if (!threeDESCipherKey) {
+        throw new Error("Erro ao criptografar chave 3DES com RSA.");
+      }
+
+      setFormattedText([
+        "Texto Cifrado: ",
+        ciphertext,
+        "",
+        "Chave 3DES Cifrada (RSA): ",
+        threeDESCipherKey,
+      ]);
+
+      toast.promise(Promise.resolve(threeDESCipherKey), {
+        loading: "Criptografando chave 3DES com RSA...",
+        success: "Chave 3DES criptografada com RSA com sucesso!",
         error: `${error}`,
       });
 
@@ -127,7 +150,7 @@ export default function Encrypt() {
                     id="RSAPublicKey"
                     type="text"
                     placeholder="Escreva a chave pública RSA do destinatário..."
-                    // required
+                    required
                     onChange={handleRSAPublicKey}
                     value={RSAPublicKey}
                   ></Input>

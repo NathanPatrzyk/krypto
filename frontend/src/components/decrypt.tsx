@@ -10,7 +10,11 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { LockKeyholeOpen } from "lucide-react";
 import { Progress } from "./ui/progress";
-import { decryptWithThreeDES } from "../utils/utils";
+import {
+  decompress,
+  decryptWithRSA,
+  decryptWithThreeDES,
+} from "../utils/utils";
 import { toast } from "sonner";
 import { error } from "console";
 
@@ -49,17 +53,45 @@ export default function Decrypt() {
     setProgress(1);
     event.preventDefault();
     try {
-      const text = decryptWithThreeDES(ciphertext, threeDESCipherKey);
+      const threeDESKey = decryptWithRSA(threeDESCipherKey, RSAPrivateKey);
 
-      if (!ciphertext) {
+      if (!threeDESKey) {
+        throw new Error("Erro ao descriptografar chave 3DES com RSA.");
+      }
+
+      toast.promise(Promise.resolve(threeDESKey), {
+        loading: "Descriptografando chave 3DES com RSA...",
+        success: "Chave 3DES descriptografada com RSA com sucesso!",
+        error: `${error}`,
+      });
+
+      setProgress(30);
+
+      const text = decryptWithThreeDES(ciphertext, threeDESKey);
+
+      if (!text) {
         throw new Error("Erro ao descriptografar texto com 3DES.");
       }
 
-      setFormattedText([text]);
-
-      toast.promise(Promise.resolve(ciphertext), {
+      toast.promise(Promise.resolve(text), {
         loading: "Descriptografando texto com 3DES...",
         success: "Texto descriptografado com sucesso!",
+        error: `${error}`,
+      });
+
+      setProgress(70);
+
+      const decompressedText = decompress(text);
+
+      if (!decompressedText) {
+        throw new Error("Erro ao descomprimir texto.");
+      }
+
+      setFormattedText([decompressedText]);
+
+      toast.promise(Promise.resolve(decompressedText), {
+        loading: "Descomprimindo texto...",
+        success: "Texto descomprimido com sucesso!",
         error: `${error}`,
       });
 
@@ -140,7 +172,7 @@ export default function Decrypt() {
                     id="RSAPrivateKey"
                     type="text"
                     placeholder="Escreva sua chave privada RSA..."
-                    // required
+                    required
                     onChange={handleRSAPrivateKey}
                     value={RSAPrivateKey}
                   ></Input>

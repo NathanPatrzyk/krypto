@@ -53,6 +53,40 @@ export function decryptWithThreeDES(ciphertext: string, threeDESKey: string) {
   return decrypted;
 }
 
+export function encryptWithRSA(text: string, RSAPublicKeyPem: string) {
+  const RSAPublicKey = forge.pki.publicKeyFromPem(RSAPublicKeyPem);
+
+  const encrypted = RSAPublicKey.encrypt(
+    forge.util.encodeUtf8(text),
+    "RSA-OAEP"
+  );
+
+  return forge.util.encode64(encrypted);
+}
+
+export function decryptWithRSA(ciphertext: string, RSAPrivateKeyPem: string) {
+  const RSAPrivateKey = forge.pki.privateKeyFromPem(RSAPrivateKeyPem);
+
+  const decrypted = RSAPrivateKey.decrypt(
+    forge.util.decode64(ciphertext),
+    "RSA-OAEP"
+  );
+
+  return forge.util.decodeUtf8(decrypted);
+}
+
+export function sign(text: string, RSAPrivateKeyPem: string) {
+  const RSAPrivateKey = forge.pki.privateKeyFromPem(RSAPrivateKeyPem);
+
+  const hash = forge.md.sha256.create();
+  hash.update(text, "utf8");
+  const signature = RSAPrivateKey.sign(hash);
+
+  return forge.util.encode64(signature);
+}
+
+
+
 export function compress(text: string) {
   return LZString.compressToEncodedURIComponent(text);
 }
