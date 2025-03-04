@@ -85,7 +85,19 @@ export function sign(text: string, RSAPrivateKeyPem: string) {
   return forge.util.encode64(signature);
 }
 
+export function verify(
+  text: string,
+  signatureBase64: string,
+  RSAPublicKeyPem: string
+) {
+  const RSAPublicKey = forge.pki.publicKeyFromPem(RSAPublicKeyPem);
 
+  const hash = forge.md.sha256.create();
+  hash.update(text, "utf8");
+  const signature = forge.util.decode64(signatureBase64);
+
+  return RSAPublicKey.verify(hash.digest().bytes(), signature)
+}
 
 export function compress(text: string) {
   return LZString.compressToEncodedURIComponent(text);
